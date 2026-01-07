@@ -10,9 +10,16 @@
 #include "include/terminal.h"
 
 #define CTRL_KEY(k) ((k) & 0x1f)
+#define SYMBOL_SPACE "·"
+#define SYMBOL_ENTER "↵"
+
+#define KEY_ENTER 13
+#define ESC_KEY 27
 
 enum configurations{
-    UNLOCKED_CHARS = 1
+    UNLOCKED_CHARS = 1,
+    BACKGROUND_COLOR,
+    DIFICULTY
 };
 
 enum comandsProcessInput{
@@ -27,9 +34,18 @@ const char * status = "src/configs/status.txt";
 const int max_line_size = 80;
 const int max_configLine_size = 100;
 
+//global variables for theme
+char currentTheme_BG[10];
+char currentStyle_Todo[20];
+char currentStyle_Correct[20];
+char currentStyle_Wrong[20];
+
 int number_words = 20;
 int totalWords;
+int nColums = 5;
 char unlockedLetters[27];
+char bgColor[15];
+int nLives;
 
 FILE * dict = NULL;
 FILE * stats = NULL;
@@ -66,58 +82,103 @@ int main()
     if(!startConfigs()) return 1;
     srand(time(NULL));
 
+
     enableRawMode();
-    setBeckgroundColor(BG_BLUE);
+    setBeckgroundColor(currentTheme_BG);
     clearScreen();
     goHome();
 
     char ** words = loadWords();
     if(words == NULL) return 1;
 
-    //MAIN LOGIC
-    //--------------
-    if(number_words > 0 && words[0] != NULL){
-        char * targetWord = words[0];
-        int len = strlen(targetWord);
-        int currentIdx = 0;
+    int len = 0;
+    for(int i = 0; i < number_words; i++)
+        if(words[i] != NULL)
+            len += strlen(words[i]);
 
-        printf(COLOR_GRAY "%s" COLOR_RESET "\r", targetWord);
-        fflush(stdout);
+    char * finalStr = (char *)malloc((len + number_words * 5 + 100)* sizeof(char));
+    if(finalStr == NULL) return 1;
+    finalStr[0] = '\0';
 
-        char c;
-        while(currentIdx < len){
-            int nread = processInputKey(targetWord[currentIdx]);
-
-            if(nread == TIMEOUT) continue;
-            if(nread == EXIT) break;
-
-            if(nread == GOT_RIGHT){
-                printf(STYLE_CORRECT "%c" , targetWord[currentIdx++]);
+    for(int i = 0; i < number_words; i++)
+        if(words[i] != NULL)
+            if(i%nColums == nColums - 1){
+                strcat(finalStr, words[i]);
+                strcat(finalStr, "\r\n");
             }
             else{
-                printf(STYLE_WRONG "%c" , targetWord[currentIdx++]);
+                strcat(finalStr, words[i]);
+                strcat(finalStr, " ");
             }
-
-            printf(STYLE_TODO);
-            fflush(stdout);
-        }
-    }
     
-    sleep(0.5f);
-    //AT EXIT
-    //----------------------
+    int finalLen = strlen(finalStr);
+
+    printf("%s", currentStyle_Todo);
+    for(int i = 0; i < finalLen; i++)
+            if(finalStr[i] == ' ')
+                printf(SYMBOL_SPACE);
+            else if(finalStr[i] == '\r')
+                printf(SYMBOL_ENTER);
+            else if(finalStr[i] == '\n')
+                printf("\r\n");
+            else 
+                printf("%c", finalStr[i]);
+    fflush(stdin);
+    
+    //free words after use
     for(int i = 0; i < number_words; i++){
         if(words[i] != NULL) free(words[i]);
     }
     free(words);
+    
+    goHome();
+    // //MAIN LOGIC
+    // //--------------
+    int nread = 0;
+    char c;
+    int i = 0;
+    while(i < finalLen && nread != EXIT){
+        nread = processInputKey(finalStr[i]);
 
-    printf(COLOR_RESET);
+        if(nread == TIMEOUT) continue;
+        if(nread == EXIT) break;
+
+        if(nread == GOT_RIGHT){
+            printf("%s", currentStyle_Correct);
+        }
+        else{
+            printf("%s", currentStyle_Wrong);
+        }
+
+        if(finalStr[i] == '\r'){
+            printf(SYMBOL_ENTER "\r\n");
+            i += 2;
+        }
+        else if(finalStr[i] == ' '){
+            printf(SYMBOL_SPACE);
+            i++;
+        }
+        else{
+            printf("%c", finalStr[i]);
+            i++;
+        }
+        
+        printf("%s", currentStyle_Todo);
+        fflush(stdout);
+    }
+
+    
+    sleep(0.5f);
+    //AT EXIT
+    //----------------------
+
+    printf(COLOR_RESET "\n");
     setBeckgroundColor(COLOR_RESET);
     clearScreen();
     fflush(stdin);
 
     if(dict)    fclose(dict);
-    if(status)  fclose(stats);
+    if(stats)  fclose(stats);
     
     return 0;
 }
@@ -127,6 +188,8 @@ void removeNL(char * str)
 {
     size_t len = strlen(str);
     if(len > 0 && str[len - 1] == '\n')
+        str[len - 1] = '\0';
+    if(len > 0 && str[len - 1] == '\r') 
         str[len - 1] = '\0';
 }
 
@@ -161,11 +224,62 @@ int startConfigs()
     while(fgets(configLine, sizeof(configLine), stats))
     {
         int configID = configLine[0] - '0';
-        if(configID == UNLOCKED_CHARS){
+
+        switch (configID)
+        {
             int i;
-            for(i = 0; configLine[i] != '\n'; i++)
-                unlockedLetters[i] = configLine[i+2];
-            unlockedLetters[i] = '\0';
+            case UNLOCKED_CHARS:
+                for(i = 0; configLine[i+2] != ';' && configLine[i+2] != '\n'; i++)
+                    unlockedLetters[i] = tolower(configLine[i+2]);
+                unlockedLetters[i] = '\0';
+                break;
+
+            case BACKGROUND_COLOR:
+                for(i = 0; configLine[i+2] != ';' && configLine[i+2] != '\n'; i++)
+                    bgColor[i] = tolower(configLine[i+2]); 
+                bgColor[i] = '\0';
+
+                if(!strcmp(bgColor, "blue")){
+                    strcpy(currentTheme_BG, BG_BLUE);
+                }
+                else if(!strcmp(bgColor, "red")){
+                    strcpy(currentTheme_BG, BG_RED);
+                }
+                else if(!strcmp(bgColor, "black")){
+                    strcpy(currentTheme_BG, BG_BLACK);
+                }
+                else if(!strcmp(bgColor, "cyan")){
+                    strcpy(currentTheme_BG, BG_CYAN);
+                }
+                else {
+                    strcpy(currentTheme_BG, BG_DARK_GRAY);
+                }
+
+                
+                sprintf(currentStyle_Correct, "%s%s", currentTheme_BG, COLOR_WHITE);
+                sprintf(currentStyle_Todo, "%s%s", currentTheme_BG, COLOR_GRAY);
+                sprintf(currentStyle_Wrong, "%s%s", currentTheme_BG, COLOR_RED);
+                break;
+        
+            case DIFICULTY:
+                char str[15];
+                for(i = 0; i < 15 && (configLine[i+2] != ';' || configLine[i+2] != '\n'); i++)
+                    str[i] = tolower(configLine[i+2]);
+                str[i] = '\0';
+
+                if(!strcmp(str, "easy")){
+                    nLives = 10;
+                }
+                else if (!strcmp(str, "difficulty")){
+                    nLives = 3;
+                }
+                else if(!strcmp(str, "Impossible")){
+                    nLives = 1;
+                }
+                else{
+                    nLives = 5;
+                }
+                break;
         }
     }
 
@@ -260,17 +374,21 @@ char ** loadWords()
 }
 
 int processInputKey(char rKey){
-    char buffer[3];
     char c;
 
     int nread = read(STDIN_FILENO, &c, sizeof(c));
 
     if(nread <= 0)  return TIMEOUT;
 
-    //ESC is ASCII 27
-    if(c == CTRL_KEY('q') || c == CTRL_KEY('c') || c == 27){
+    if(c == CTRL_KEY('q') || c == CTRL_KEY('c') || c == ESC_KEY){
         return EXIT;
     }
+
+    if(rKey == '\r')
+        if(c == KEY_ENTER || c == '\n')
+            return GOT_RIGHT;
+        else
+            return GOT_WRONG;
 
     if(c == rKey) 
         return GOT_RIGHT;
