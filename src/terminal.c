@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #ifdef _WIN32
     #include <windows.h>
@@ -12,6 +13,8 @@
     void disableRawMode() {}
 
     void clearScreen() {}
+
+    void goHome() {}
 
 #else
     #include <termios.h>
@@ -31,8 +34,13 @@
         struct termios raw = orig_termios;
 
         //optional ISIG: turn off ctrl-c
-        raw.c_lflag &= ~(ECHO | ICANON | ISIG);
+        raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
         raw.c_oflag &= ~(OPOST);
+        raw.c_iflag &= ~(IXON);
+
+        //read function can return 0 if it read nothing in 0.1 seconds
+        raw.c_cc[VMIN] = 0;
+        raw.c_cc[VTIME] = 1; 
 
         tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
     }
@@ -41,9 +49,22 @@
     {
         // \x1b = ESC
         // [2J = clear screen
-        // [H  = move cursor home
-        const char * command = "\x1b[2J\x1b[H";
+        const char * command = "\x1b[2J";
         write(STDOUT_FILENO, command, strlen(command));
+    }
+
+    void goHome()
+    {
+        // \x1b = ESC
+        // [H  = move cursor home
+        const char * command = "\x1b[H";
+        write(STDIN_FILENO, command, strlen(command));
+    }
+
+    void setBeckgroundColor(const char * colorCode) {
+        write(STDIN_FILENO, colorCode, strlen(colorCode));
+        clearScreen();
+        goHome();
     }
 
 #endif
