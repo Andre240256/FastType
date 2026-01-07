@@ -4,8 +4,22 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include <termios.h>
+#include <unistd.h>
+
+#include "include/terminal.h"
+
+#define CTRL_KEY(k) ((k) & 0x1f)
+
 enum configurations{
     UNLOCKED_CHARS = 1
+};
+
+enum comandsProcessInput{
+    TIMEOUT,
+    EXIT,
+    GOT_RIGHT,
+    GOT_WRONG
 };
 
 const char * dictionary = "/usr/share/dict/words";
@@ -32,12 +46,18 @@ void removeNL(char * str);
 void lower(char * str);
 
 //LOADING LEVEL
+//-------------
 char ** loadWords();
 
+//auxiliar functions loading level
 void randomIntegers();
 int getRandInt(int min, int max);
 int isValidWord(const char * str);
 void shuffleWords(char ** array);
+
+//INPUT FUNCTIONS
+//---------------
+int processInputKey(char rKey);
 
 
 int main()
@@ -46,10 +66,55 @@ int main()
     if(!startConfigs()) return 1;
     srand(time(NULL));
 
-    char ** words = loadWords();
+    enableRawMode();
+    setBeckgroundColor(BG_BLUE);
+    clearScreen();
+    goHome();
 
-    for(int i = 0; i < number_words; i++)
-        printf("%s\n", words[i]);
+    char ** words = loadWords();
+    if(words == NULL) return 1;
+
+    //MAIN LOGIC
+    //--------------
+    if(number_words > 0 && words[0] != NULL){
+        char * targetWord = words[0];
+        int len = strlen(targetWord);
+        int currentIdx = 0;
+
+        printf(COLOR_GRAY "%s" COLOR_RESET "\r", targetWord);
+        fflush(stdout);
+
+        char c;
+        while(currentIdx < len){
+            int nread = processInputKey(targetWord[currentIdx]);
+
+            if(nread == TIMEOUT) continue;
+            if(nread == EXIT) break;
+
+            if(nread == GOT_RIGHT){
+                printf(STYLE_CORRECT "%c" , targetWord[currentIdx++]);
+            }
+            else{
+                printf(STYLE_WRONG "%c" , targetWord[currentIdx++]);
+            }
+
+            printf(STYLE_TODO);
+            fflush(stdout);
+        }
+    }
+    
+    sleep(0.5f);
+    //AT EXIT
+    //----------------------
+    for(int i = 0; i < number_words; i++){
+        if(words[i] != NULL) free(words[i]);
+    }
+    free(words);
+
+    printf(COLOR_RESET);
+    setBeckgroundColor(COLOR_RESET);
+    clearScreen();
+    fflush(stdin);
 
     if(dict)    fclose(dict);
     if(status)  fclose(stats);
@@ -192,4 +257,25 @@ char ** loadWords()
     shuffleWords(words);
 
     return words;
+}
+
+int processInputKey(char rKey){
+    char buffer[3];
+    char c;
+
+    int nread = read(STDIN_FILENO, &c, sizeof(c));
+
+    if(nread <= 0)  return TIMEOUT;
+
+    //ESC is ASCII 27
+    if(c == CTRL_KEY('q') || c == CTRL_KEY('c') || c == 27){
+        return EXIT;
+    }
+
+    if(c == rKey) 
+        return GOT_RIGHT;
+    else 
+        return GOT_WRONG;
+
+    return 1;
 }
