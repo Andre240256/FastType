@@ -1,3 +1,4 @@
 1 enitrl;
 2 dark_gray;
-3 easy;
+3 hard; 
+

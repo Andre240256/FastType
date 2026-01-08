@@ -26,7 +26,8 @@ enum comandsProcessInput{
     TIMEOUT,
     EXIT,
     GOT_RIGHT,
-    GOT_WRONG
+    GOT_WRONG,
+    DEFEAT
 };
 
 const char * dictionary = "/usr/share/dict/words";
@@ -135,9 +136,8 @@ int main()
     // //MAIN LOGIC
     // //--------------
     int nread = 0;
-    char c;
     int i = 0;
-    while(i < finalLen && nread != EXIT){
+    while(i < finalLen && nread != EXIT && nread != DEFEAT){
         nread = processInputKey(finalStr[i]);
 
         if(nread == TIMEOUT) continue;
@@ -148,6 +148,7 @@ int main()
         }
         else{
             printf("%s", currentStyle_Wrong);
+            nLives--;
         }
 
         if(finalStr[i] == '\r'){
@@ -165,10 +166,26 @@ int main()
         
         printf("%s", currentStyle_Todo);
         fflush(stdout);
+
+        if(!nLives) nread = DEFEAT;
+            
     }
 
-    
-    sleep(0.5f);
+    if(nread != EXIT){
+        printf("%s", currentStyle_Correct);
+        if(nLives == 0)
+            printf("\n\n\rYou lost! Good luck next time.\r\n");
+        else{
+            printf("You got it! nice play!\r\n");
+        }
+        printf("Please press cntr+q or esc to quit\r\n");
+        fflush(stdin);
+
+        nread = 0;
+        while(nread != EXIT)
+            nread = processInputKey('/0');
+    }
+
     //AT EXIT
     //----------------------
 
@@ -263,21 +280,21 @@ int startConfigs()
         
             case DIFICULTY:
                 char str[15];
-                for(i = 0; i < 15 && (configLine[i+2] != ';' || configLine[i+2] != '\n'); i++)
+                for(i = 0; configLine[i+2] != ';' && configLine[i+2] != '\n'; i++)
                     str[i] = tolower(configLine[i+2]);
                 str[i] = '\0';
 
                 if(!strcmp(str, "easy")){
-                    nLives = 10;
+                    nLives = __INT_MAX__;
                 }
-                else if (!strcmp(str, "difficulty")){
+                else if (!strcmp(str, "hard")){
                     nLives = 3;
                 }
                 else if(!strcmp(str, "Impossible")){
                     nLives = 1;
                 }
                 else{
-                    nLives = 5;
+                    nLives = 7;
                 }
                 break;
         }
