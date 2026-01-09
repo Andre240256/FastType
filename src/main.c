@@ -78,7 +78,7 @@ int processInputKey(char rKey);
 
 //STATS FUNCTIONS
 float getWordsPerMinute(time_t init, time_t end, int strlen);
-
+int getTypableChars(const char * str, int strSize);
 
 int main()
 {
@@ -141,6 +141,7 @@ int main()
     int nread = 0;
     int i = 0;
     int first_letter_typed = 1;
+    int gotWrong = 0;
     time_t startTime = 0;
     while(i < finalLen && nread != EXIT && nread != DEFEAT){
         nread = processInputKey(finalStr[i]);
@@ -159,6 +160,7 @@ int main()
         else{
             printf("%s", currentStyle_Wrong);
             nLives--;
+            gotWrong++;
         }
 
         if(finalStr[i] == '\r'){
@@ -181,15 +183,19 @@ int main()
             
     }   
     time_t finalTime = time(NULL);
+    int typedChar = getTypableChars(finalStr, finalLen);
 
     if(nread != EXIT){
         float wordsPerMinute = getWordsPerMinute(startTime, finalTime, finalLen);
+        float precision = 100 * ((float)(typedChar - gotWrong)) / (float)finalLen;
+
         printf("%s", currentStyle_Correct);
         if(nLives == 0)
             printf("\n\n\rYou lost! Good luck next time.\r\n");
         else{
             printf("You got it! nice play!\r\n");
             printf("Great speed, you typed %g words per minute!\r\n", wordsPerMinute);
+            printf("Your precision was %.2f%%!\r\n", precision);
         }
         printf("Please press cntr+q or esc to quit\r\n");
         fflush(stdin);
@@ -439,4 +445,14 @@ float getWordsPerMinute(time_t init, time_t end, int charCount)
     
     float result = totalWords/elapsedMinutes;
     return result;
+}
+
+int getTypableChars(const char * str, int strSize)
+{
+    int count = 0;
+    for(int i = 0; str[i] != '/0' && i < strSize; i++){
+        if(str[i] != '\r')
+            count++;
+    }
+    return count;
 }
