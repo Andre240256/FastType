@@ -43,7 +43,7 @@ char currentStyle_Wrong[20];
 
 int number_words = 20;
 int totalWords;
-int nColums = 5;
+int nColums = 10;
 char unlockedLetters[27];
 char bgColor[15];
 int nLives;
@@ -75,6 +75,9 @@ void shuffleWords(char ** array);
 //INPUT FUNCTIONS
 //---------------
 int processInputKey(char rKey);
+
+//STATS FUNCTIONS
+float getWordsPerMinute(time_t init, time_t end, int strlen);
 
 
 int main()
@@ -131,17 +134,24 @@ int main()
         if(words[i] != NULL) free(words[i]);
     }
     free(words);
-    
     goHome();
+
     // //MAIN LOGIC
     // //--------------
     int nread = 0;
     int i = 0;
+    int first_letter_typed = 1;
+    time_t startTime = 0;
     while(i < finalLen && nread != EXIT && nread != DEFEAT){
         nread = processInputKey(finalStr[i]);
 
         if(nread == TIMEOUT) continue;
         if(nread == EXIT) break;
+
+        if(first_letter_typed){
+            startTime = time(NULL);
+            first_letter_typed = 0;
+        }
 
         if(nread == GOT_RIGHT){
             printf("%s", currentStyle_Correct);
@@ -169,14 +179,17 @@ int main()
 
         if(!nLives) nread = DEFEAT;
             
-    }
+    }   
+    time_t finalTime = time(NULL);
 
     if(nread != EXIT){
+        float wordsPerMinute = getWordsPerMinute(startTime, finalTime, finalLen);
         printf("%s", currentStyle_Correct);
         if(nLives == 0)
             printf("\n\n\rYou lost! Good luck next time.\r\n");
         else{
             printf("You got it! nice play!\r\n");
+            printf("Great speed, you typed %g words per minute!\r\n", wordsPerMinute);
         }
         printf("Please press cntr+q or esc to quit\r\n");
         fflush(stdin);
@@ -413,4 +426,17 @@ int processInputKey(char rKey){
         return GOT_WRONG;
 
     return 1;
+}
+
+float getWordsPerMinute(time_t init, time_t end, int charCount)
+{
+    double elapsedSeconds = difftime(end, init);
+    if(elapsedSeconds <= 0.0) return 0.0f;
+
+    //tempo em minutos
+    double elapsedMinutes = elapsedSeconds / 60.0;
+    float totalWords = (float)charCount / 5.0f;
+    
+    float result = totalWords/elapsedMinutes;
+    return result;
 }
