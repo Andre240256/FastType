@@ -520,6 +520,7 @@ APPstate runGame(float * wpm, float * precision)
     printf("%s", currentStyle_Todo);
     char * screenStr = initScreenString(finalStr);
     printScreenStr(screenStr);
+    free(screenStr);
     
     int nread = 0, i = 0, firstLetterTyped = 1;
     int gotWrong = 0;
@@ -568,16 +569,20 @@ APPstate runGame(float * wpm, float * precision)
     end = time(NULL); 
     switch (nread){
         case EXIT:
+            free(finalStr);
             return STATE_EXIT;
         case DEFEAT:
+            free(finalStr);
             return STATE_LOSER;
         case GO_TO_MENU:
+            free(finalStr);
             return STATE_MENU;
     }
 
     int charCount = getTypableChars(finalStr, finalLen);
     *precision = (float)(charCount - gotWrong)/(float)charCount*100;
     *wpm = getWordsPerMinute(init, end, charCount);
+    free(finalStr);
     
     return STATE_WINNER;
 }
