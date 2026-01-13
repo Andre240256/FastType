@@ -8,11 +8,11 @@
 #define COLOR_GRAY      "\x1b[90m"
 
 //beckground color
-#define BG_DARK_GRAY    "\x1b[48;5;240m"
-#define BG_BLACK        "\x1b[40m"
-#define BG_RED          "\x1b[41m"
-#define BG_BLUE         "\x1b[44m"
-#define BG_CYAN         "\x1b[46m"
+#define BG_DARK_GRAY    "\x1b[48;5;235m"
+#define BG_BLACK        "\x1b[48;5;0m"
+#define BG_RED          "\x1b[48;5;52m"
+#define BG_BLUE         "\x1b[48;5;21m"
+#define BG_CYAN         "\x1b[48;5;36m"
 
 
 //FUNCTIONS DECLARATIONS
@@ -30,3 +30,13 @@ void setBeckgroundColor(const char * colorCode);
 void enableAlternativeScreen();
 
 void disableAlternativeScreen();
+
+void setCursorBlock();
+
+void setFlashCursorBlock();
+
+void setCursorBar();
+
+void setFlashCursorBar();
+
+void resetCursorShape();

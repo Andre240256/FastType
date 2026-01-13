@@ -111,6 +111,7 @@ int main()
 
     enableRawMode();
     enableAlternativeScreen();
+    resetCursorShape();
 
     APPstate currentState = runStartMenu();
     float wpm, precision;
@@ -141,6 +142,7 @@ int main()
 
     printf(COLOR_RESET "\n");
     setBeckgroundColor(COLOR_RESET);
+    resetCursorShape();
     clearScreen();
     fflush(stdout);
 
@@ -521,7 +523,10 @@ APPstate runGame(float * wpm, float * precision)
     setBeckgroundColor(currentTheme_BG);
     clearScreen();
     goHome();
+    setCursorBlock();
     printf("%s", currentStyle_Todo);
+
+
     char * screenStr = initScreenString(finalStr);
     printScreenStr(screenStr);
     free(screenStr);
@@ -569,6 +574,8 @@ APPstate runGame(float * wpm, float * precision)
 
         if(!lives) nread = DEFEAT;
     }
+
+    resetCursorShape();
 
     end = time(NULL); 
     switch (nread){

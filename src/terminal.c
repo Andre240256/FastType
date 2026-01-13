@@ -80,4 +80,29 @@
         fflush(stdout);
     }
 
+    void setCursorBlock()
+    {
+        printf("\033[2 q");
+    }
+
+    void setFlashCursorBlock()
+    {
+        printf("\033[0 q");
+    }
+
+    void setCursorBar()
+    {
+        printf("\033[6 q");
+    }
+
+    void setFlashCursorBar()
+    {
+        printf("\033[5 q");
+    }
+
+    void resetCursorShape()
+    {
+        printf("\033[0 q");
+        printf("\033[?25h");
+    }
 #endif
