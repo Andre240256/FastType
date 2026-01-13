@@ -110,6 +110,7 @@ int main()
     srand(time(NULL));
 
     enableRawMode();
+    enableAlternativeScreen();
 
     APPstate currentState = runStartMenu();
     float wpm, precision;
@@ -142,6 +143,9 @@ int main()
     setBeckgroundColor(COLOR_RESET);
     clearScreen();
     fflush(stdout);
+
+    disableAlternativeScreen();
+    disableRawMode();
 
     if(dict)    fclose(dict);
     if(stats)  fclose(stats);

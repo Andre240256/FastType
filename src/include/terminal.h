@@ -26,3 +26,7 @@ void clearScreen();
 void goHome();
 
 void setBeckgroundColor(const char * colorCode);
+
+void enableAlternativeScreen();
+
+void disableAlternativeScreen();

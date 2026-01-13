@@ -67,4 +67,17 @@
         goHome();
     }
 
+    void disableAlternativeScreen()
+    {
+        printf("\033[?1049l");
+        fflush(stdout);
+    }
+
+    void enableAlternativeScreen()
+    {
+        atexit(disableAlternativeScreen);
+        printf("\033[?1049h");
+        fflush(stdout);
+    }
+
 #endif
