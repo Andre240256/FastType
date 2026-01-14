@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 199309L
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -7,11 +8,14 @@
 #include <termios.h>
 #include <unistd.h>
 
-#include "include/terminal.h"
+#include "terminal/include/terminal.h"
+#include "stats/include/stats.h"
+#include "debug/include/debug.h"
 
 #define CTRL_KEY(k) ((k) & 0x1f)
 #define SYMBOL_SPACE "·"
 #define SYMBOL_ENTER "↵"
+#define SYMBOL_VERTICAL_DOUBLE_BAR "║"
 
 #define KEY_ENTER 13
 #define ESC_KEY 27
@@ -107,6 +111,7 @@ int main()
 {
     if(!startFiles())   return 1;
     if(!startConfigs()) return 1;
+    loadGameData();
     srand(time(NULL));
 
     enableRawMode();
@@ -146,6 +151,7 @@ int main()
     clearScreen();
     fflush(stdout);
 
+    saveStats(charStats);
     disableAlternativeScreen();
     disableRawMode();
 
@@ -482,7 +488,14 @@ APPstate runMenu() {
     goHome();
 
     printf("################  MENU ###############\r\n\r\n");
-    printf("Type 'c' to continue playing\r\n");
+    printf("STATS: ");
+    for(int i = 0; i < 26; i++){
+        if(i%4 == 0)
+            printf("\r\n");
+        printf("'%c' : %.2f wpm " SYMBOL_VERTICAL_DOUBLE_BAR, 'a' + i, charStats['a' + i].currentWpm);
+    }
+    printf("\r\n####################################\r\n");
+    printf("\r\nType 'c' to continue playing\r\n");
     printf("Type 'cntrl + q' to quit game\r\n");
     printf("\r\n######################################\r\n");
     fflush(stdout);
@@ -544,16 +557,22 @@ APPstate runGame(float * wpm, float * precision)
 
         if(firstLetterTyped){
             init = time(NULL);
+            clock_gettime(CLOCK_MONOTONIC, &lastKeyPressTime);
             firstLetterTyped = 0;
+            // logDebug("JOGO INICIOU: Resetando clock.");
         }
 
+        struct timespec now;
+        clock_gettime(CLOCK_MONOTONIC, &now);
         if(nread == GOT_RIGHT){
             printf("%s", currentStyle_Correct);
+            registerKeyStats(finalStr[i], &now);
         }
         else{
             printf("%s", currentStyle_Wrong);
             lives--;
             gotWrong++;
+            lastKeyPressTime = now;
         }
 
         if(finalStr[i] == '\r'){

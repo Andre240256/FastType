@@ -13,10 +13,17 @@ endif()
 
 set(SOURCES
     src/main.c
-    src/terminal.c
+    src/terminal/terminal.c
+    src/stats/stats.c
+    src/debug/debug.c
 )
 
 add_executable(ctt ${SOURCES})
-target_include_directories(ctt PRIVATE src/include)
+target_include_directories(ctt 
+    PRIVATE 
+    src/terminal/include 
+    src/stats/include 
+    src/debug/include
+)
 
 file(COPY ${CMAKE_SOURCE_DIR}/src/configs DESTINATION ${CMAKE_BINARY_DIR}/src)

@@ -1,2 +1,4 @@
 .vscode/
 build/
+debug.txt
+src/configs/userdata.bin
