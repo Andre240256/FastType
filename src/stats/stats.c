@@ -9,7 +9,7 @@
 #include "../debug/include/debug.h"
 
 #define FILE_ASS 0x465431
-#define FILE_VERSION 1
+#define FILE_VERSION 2
 
 const char * STATS_FILE = "src/configs/userdata.bin";
 
@@ -18,6 +18,8 @@ CharStats charStats[ALPHABET_SIZE];
 
 void registerKeyStats(char c, struct timespec * now)
 {
+    charStats[(int)c].precision = (float)charStats[(int)c].rightCount / (float)(charStats[(int)c].rightCount + charStats[(int)c].wrongCount);
+
     double delta = (now->tv_sec - lastKeyPressTime.tv_sec) +
                    (now->tv_nsec - lastKeyPressTime.tv_nsec) / 1e9;
 

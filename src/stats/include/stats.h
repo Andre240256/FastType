@@ -20,6 +20,9 @@ typedef struct {
     int sampleIndex;
     int count;
     double currentWpm;
+    int wrongCount;
+    int rightCount;
+    double precision;
 } CharStats;
 
 extern struct timespec lastKeyPressTime;

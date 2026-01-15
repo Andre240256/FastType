@@ -490,9 +490,10 @@ APPstate runMenu() {
     printf("################  MENU ###############\r\n\r\n");
     printf("STATS: ");
     for(int i = 0; i < 26; i++){
-        if(i%4 == 0)
+        if(i%3 == 0)
             printf("\r\n");
-        printf("'%c' : %.2f wpm " SYMBOL_VERTICAL_DOUBLE_BAR, 'a' + i, charStats['a' + i].currentWpm);
+        printf("'%c' : %.2f wpm, %.2f%% precision" SYMBOL_VERTICAL_DOUBLE_BAR, 'a' + i, 
+                charStats['a' + i].currentWpm, charStats['a' + i].precision * 100);
     }
     printf("\r\n####################################\r\n");
     printf("\r\nType 'c' to continue playing\r\n");
@@ -567,12 +568,14 @@ APPstate runGame(float * wpm, float * precision)
         if(nread == GOT_RIGHT){
             printf("%s", currentStyle_Correct);
             registerKeyStats(finalStr[i], &now);
+            charStats[(int)finalStr[i]].rightCount++;
         }
         else{
             printf("%s", currentStyle_Wrong);
             lives--;
             gotWrong++;
             lastKeyPressTime = now;
+            charStats[(int)finalStr[i]].wrongCount++;
         }
 
         if(finalStr[i] == '\r'){
