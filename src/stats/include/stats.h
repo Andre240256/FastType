@@ -35,3 +35,5 @@ int saveStats(CharStats * statsArray);
 int loadStats(CharStats * statsArray);
 
 void loadGameData();
+
+void updateUnlockedLetters();

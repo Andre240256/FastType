@@ -51,6 +51,11 @@ const char * dictionary = "/usr/share/dict/words";
 const char * status = "src/configs/status.txt";
 const int max_line_size = 80;
 const int max_configLine_size = 100;
+const char alphabet[] = {
+    'e', 'n', 'i', 't', 'r', 'l', 's', 'a', 'u', 'o', 
+    'd', 'y', 'c', 'h', 'g', 'm', 'p', 'b', 'k', 'v', 
+    'w', 'f', 'z', 'x', 'q', 'j'
+};
 
 //global variables for theme
 char currentTheme_BG[20];
@@ -99,6 +104,7 @@ int processInputKey(char rKey);
 //STATS FUNCTIONS
 float getWordsPerMinute(time_t init, time_t end, int strlen);
 int getTypableChars(const char * str, int strSize);
+void updateUnlockedLetter();
 
 //STATEMACHINE FUNCTIONS
 APPstate runMenu();
@@ -151,6 +157,7 @@ int main()
     clearScreen();
     fflush(stdout);
 
+    updateUnlockedLetters();
     saveStats(charStats);
     disableAlternativeScreen();
     disableRawMode();
@@ -206,12 +213,6 @@ int startConfigs()
         switch (configID)
         {
             int i;
-            case UNLOCKED_CHARS:
-                for(i = 0; configLine[i+2] != ';' && configLine[i+2] != '\n'; i++)
-                    unlockedLetters[i] = tolower(configLine[i+2]);
-                unlockedLetters[i] = '\0';
-                break;
-
             case BACKGROUND_COLOR:
                 for(i = 0; configLine[i+2] != ';' && configLine[i+2] != '\n'; i++)
                     bgColor[i] = tolower(configLine[i+2]); 
@@ -481,6 +482,7 @@ int getTypableChars(const char * str, int strSize)
 
 //STATEMACHINE FUNCTIONS
 APPstate runMenu() {
+    updateUnlockedLetters(); 
     clearScreen();
     setBeckgroundColor(currentTheme_BG);
     goHome();
@@ -496,6 +498,8 @@ APPstate runMenu() {
                 charStats['a' + i].currentWpm, charStats['a' + i].precision * 100);
     }
     printf("\r\n####################################\r\n");
+    printf("Unlocked letters: %s\r\n", unlockedLetters);
+    printf("####################################\r\n");
     printf("\r\nType 'c' to continue playing\r\n");
     printf("Type 'cntrl + q' to quit game\r\n");
     printf("\r\n######################################\r\n");

@@ -9,10 +9,14 @@
 #include "../debug/include/debug.h"
 
 #define FILE_ASS 0x465431
-#define FILE_VERSION 2
+#define FILE_VERSION 3
 
 const char * STATS_FILE = "src/configs/userdata.bin";
+const double minimunPrecision = 0.90;
+const float minimunWpm = 35.0f;
 
+extern char alphabet[26];
+extern char unlockedLetters[27];
 struct timespec lastKeyPressTime;
 CharStats charStats[ALPHABET_SIZE];
 
@@ -73,9 +77,10 @@ int saveStats(CharStats * statsArray)
     fwrite(&header, sizeof(FileHeader), 1, file);
 
     size_t written = fwrite(statsArray, sizeof(CharStats), ALPHABET_SIZE, file);
+    size_t strSize = fwrite(unlockedLetters, sizeof(char), 27, file);
     fclose(file);
 
-    return (written == ALPHABET_SIZE);
+    return (written == ALPHABET_SIZE) && (strSize == 27);
 }
 
 int loadStats(CharStats * statsArray)
@@ -105,7 +110,7 @@ int loadStats(CharStats * statsArray)
         return 0;
     }
 
-    long expectedSize = sizeof(CharStats) * ALPHABET_SIZE + sizeof(FileHeader);
+    long expectedSize = sizeof(CharStats) * ALPHABET_SIZE + sizeof(FileHeader) + sizeof(char) * 27;
 
 
     if (fileSize != expectedSize) {
@@ -116,19 +121,43 @@ int loadStats(CharStats * statsArray)
 
 
     size_t read = fread(statsArray, sizeof(CharStats), ALPHABET_SIZE, file);
+    size_t strSize = fread(unlockedLetters, sizeof(char), 27 , file);
     fclose(file);
 
     if (read != ALPHABET_SIZE) {
         return 0;
     }
 
-    return (read == ALPHABET_SIZE);
+    return (read == ALPHABET_SIZE) && (strSize == 27);
 }
 
 void loadGameData()
 {
     if(!loadStats(charStats)){
         memset(charStats, 0, sizeof(CharStats) * ALPHABET_SIZE);
+        memset(unlockedLetters, 0, sizeof(char) * 27);
+        strcpy(unlockedLetters, "enitrl");
         saveStats(charStats);
     }
+}
+
+void updateUnlockedLetters()
+{
+    int newLetter = 1;
+    for(int i = 0; i < (int)strlen(unlockedLetters); i++)
+    {
+        if(charStats[(int)unlockedLetters[i]].currentWpm < minimunWpm &&
+           charStats[(int)unlockedLetters[i]].precision < minimunPrecision){
+            logDebug("Precisa melhorar a letra %c\n", unlockedLetters[i]);
+            newLetter = 0;
+        }
+    }
+
+    int size = strlen(unlockedLetters);
+    if(newLetter && size < 26){
+        unlockedLetters[size] = alphabet[size];
+        unlockedLetters[++size] = '\0';
+    }
+
+    saveStats(charStats);
 }
